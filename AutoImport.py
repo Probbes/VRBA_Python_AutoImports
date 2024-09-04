@@ -37,7 +37,7 @@ def set_blueprint_properties(BPpath, check, name, filename) :
 
     #Get Blueprint Class to Actor Class
     bpgen = unreal.load_object(None, BPpath)
-    bpdef = unreal.get_default_object(bpgen)
+    bpdef = unreal.get_default_object (bpgen)
 
     #Add a Skeletal Mesh
     SkeletalMesh = unreal.EditorAssetLibrary.load_asset('/Game/Imports/AutoImports/'+ filename + '/' + filename + '.' + filename )
@@ -110,11 +110,26 @@ def set_datatable(filename, name, check, asset) :
     unreal.PythonDataTableLib.set_property_by_string_at(datatable, row_index, 1, asset)
     unreal.PythonDataTableLib.set_property_by_string_at(datatable, row_index, 2, check)
 
+def check_texture(filename) :
+    SkeletalMesh = unreal.EditorAssetLibrary.load_asset('/Game/Imports/AutoImports/'+ filename + '/' + filename + '.' + filename )
+    material = SkeletalMesh.materials[0].material_interface.get_base_material()
+    if (len(unreal.MaterialEditingLibrary.get_used_textures(material)) == 0) :
+        return 1
+    else :
+        return 0
+
 def button(filepath, check, name) :
     print("BUTTON PRESSED")
-    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([import_fbx(filepath)])
+    task = import_fbx(filepath)
+    unreal.AssetToolsHelpers.get_asset_tools().import_asset_tasks([task])
     filename = os.path.splitext(os.path.basename(filepath))[0]
-    assetPath = create_child_blueprint('/Game/Imports/BP_SqueletteBase', '/Game/Imports/AutoImports/', filename)
-    set_blueprint_properties(assetPath + '_C', check, name, filename)
-    set_animations_properties(filename)
-    set_datatable(filename, name, check, assetPath+'_C')
+
+    if (check_texture(filename) == 1) :
+        unreal.EditorAssetLibrary.delete_directory('/Game/Imports/AutoImports/'+filename+'/')
+        return 1
+    else : 
+        assetPath = create_child_blueprint('/Game/Imports/BP_SqueletteBase', '/Game/Imports/AutoImports/', filename)
+        set_blueprint_properties(assetPath + '_C', check, name, filename)
+        set_animations_properties(filename)
+        set_datatable(filename, name, check, assetPath+'_C')
+        return 0
